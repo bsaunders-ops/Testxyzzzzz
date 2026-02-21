@@ -36,8 +36,12 @@
         .game-wrapper {
             text-align: center;
             width: 100%;
-            max-width: 840px;
-            padding: 8px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
 
         h1 {
@@ -59,10 +63,6 @@
             border-radius: 8px;
             background: #87CEEB;
             display: block;
-            margin: 0 auto;
-            cursor: pointer;
-            width: 100%;
-            max-width: 800px;
             touch-action: none;
         }
 
@@ -70,21 +70,20 @@
         .touch-controls {
             display: none;
             width: 100%;
-            max-width: 800px;
-            margin: 10px auto 0;
-            gap: 12px;
+            margin-top: 10px;
+            gap: 16px;
             justify-content: center;
-            padding: 0 10px;
+            padding: 0 16px;
         }
 
         .touch-btn {
             flex: 1;
-            max-width: 200px;
-            height: 70px;
-            border: 3px solid;
-            border-radius: 16px;
+            max-width: 250px;
+            height: 80px;
+            border: 4px solid;
+            border-radius: 20px;
             font-family: 'Courier New', monospace;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             font-weight: bold;
             letter-spacing: 1px;
             cursor: pointer;
@@ -96,31 +95,31 @@
         }
 
         .touch-btn:active {
-            transform: scale(0.95);
+            transform: scale(0.93);
         }
 
         .btn-jump {
-            background: rgba(46, 204, 113, 0.25);
+            background: rgba(46, 204, 113, 0.3);
             border-color: #2ecc71;
             color: #2ecc71;
         }
 
         .btn-jump:active {
-            background: rgba(46, 204, 113, 0.5);
+            background: rgba(46, 204, 113, 0.6);
         }
 
         .btn-duck {
-            background: rgba(243, 156, 18, 0.25);
+            background: rgba(243, 156, 18, 0.3);
             border-color: #f39c12;
             color: #f39c12;
         }
 
         .btn-duck:active {
-            background: rgba(243, 156, 18, 0.5);
+            background: rgba(243, 156, 18, 0.6);
         }
 
         .btn-icon {
-            font-size: 1.6rem;
+            font-size: 1.8rem;
         }
 
         .controls-info {
@@ -148,20 +147,18 @@
         @media (max-width: 500px) {
             h1 { font-size: 1.1rem; }
             .subtitle { font-size: 0.65rem; }
-            .game-wrapper { padding: 4px; }
             .touch-btn {
-                height: 60px;
-                font-size: 1rem;
-                border-radius: 12px;
+                height: 70px;
+                font-size: 1.2rem;
+                border-radius: 16px;
             }
         }
 
         /* Landscape phone - maximize game area */
         @media (max-height: 450px) and (orientation: landscape) {
             h1, .subtitle { display: none; }
-            .game-wrapper { padding: 2px; }
-            .touch-controls { margin-top: 4px; gap: 8px; }
-            .touch-btn { height: 50px; font-size: 0.9rem; }
+            .touch-controls { margin-top: 4px; gap: 10px; }
+            .touch-btn { height: 55px; font-size: 1rem; }
         }
     </style>
 </head>
@@ -187,22 +184,80 @@
     const btnJump = document.getElementById('btnJump');
     const btnDuck = document.getElementById('btnDuck');
 
+    // ---- AUTO RESIZE ----
+    function resizeCanvas() {
+        const wrapper = document.querySelector('.game-wrapper');
+        const touchControls = document.querySelector('.touch-controls');
+        const title = document.querySelector('h1');
+        const subtitle = document.querySelector('.subtitle');
+        const info = document.querySelector('.controls-info');
+
+        const ww = window.innerWidth;
+        const wh = window.innerHeight;
+
+        // Calculate available space
+        let titleH = title.offsetHeight + subtitle.offsetHeight + 16;
+        let btnH = touchControls.offsetHeight + 14;
+        let infoH = info.offsetHeight + 10;
+
+        // On landscape small screens, title is hidden
+        if (wh < 450 && ww > wh) {
+            titleH = 0;
+        }
+
+        const isTouchVisible = window.getComputedStyle(touchControls).display !== 'none';
+        const reservedH = titleH + (isTouchVisible ? btnH : infoH) + 20;
+
+        const availW = ww - 20; // padding
+        const availH = wh - reservedH;
+
+        // Canvas aspect ratio is 800:300 = 8:3
+        const aspectRatio = 800 / 300;
+
+        let drawW = availW;
+        let drawH = drawW / aspectRatio;
+
+        if (drawH > availH) {
+            drawH = availH;
+            drawW = drawH * aspectRatio;
+        }
+
+        // Clamp to reasonable sizes
+        drawW = Math.min(drawW, 800);
+        drawH = Math.min(drawH, 300);
+        drawW = Math.max(drawW, 200);
+        drawH = Math.max(drawH, 75);
+
+        canvas.style.width = Math.floor(drawW) + 'px';
+        canvas.style.height = Math.floor(drawH) + 'px';
+
+        // Set touch control width to match canvas
+        if (isTouchVisible) {
+            touchControls.style.maxWidth = Math.floor(drawW) + 'px';
+        }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(resizeCanvas, 100);
+    });
+
     // Game constants
     const GROUND_Y = 240;
-    const GRAVITY = 0.6;
-    const JUMP_FORCE = -12;
-    const INITIAL_SPEED = 5;
-    const MAX_SPEED = 12;
+    const GRAVITY = 0.45;          // Softer gravity - floatier jumps for little hands
+    const JUMP_FORCE = -11.5;      // Slightly less force but floatier = higher effective jump
+    const INITIAL_SPEED = 3;       // Much slower starting speed
+    const MAX_SPEED = 7;           // Caps way lower so it never gets crazy fast
+    const SPEED_RAMP = 1200;       // Score divisor for speed increase - ramps very slowly
 
     // Game state
-    let gameState = 'start'; // start, playing, gameover
+    let gameState = 'start';
     let score = 0;
     let highScore = 0;
     let speed = INITIAL_SPEED;
     let frameCount = 0;
     let isTouchDevice = false;
 
-    // Detect touch device
     function detectTouch() {
         isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     }
@@ -215,14 +270,7 @@
         { x: 600, y: 30, size: 1.2 },
     ];
 
-    // Ground tiles
     let groundOffset = 0;
-
-    // Stars (for decoration)
-    let stars = [];
-    for (let i = 0; i < 5; i++) {
-        stars.push({ x: Math.random() * 800, y: Math.random() * 80 + 10 });
-    }
 
     // ---- GRADY (the little boy) ----
     const grady = {
@@ -272,11 +320,12 @@
             }
         },
 
+        // Forgiving hitbox - smaller than the character looks
         getHitbox() {
             if (this.isDucking) {
-                return { x: this.x, y: this.y + 20, w: 36, h: 28 };
+                return { x: this.x + 4, y: this.y + 24, w: 28, h: 20 };
             }
-            return { x: this.x + 4, y: this.y, w: 24, h: 48 };
+            return { x: this.x + 8, y: this.y + 4, w: 16, h: 40 };
         },
 
         draw() {
@@ -419,9 +468,9 @@
                 width: 50, height: 60, frame: 0, frameTimer: 0,
             };
         } else if (type === 'flying') {
-            const flyY = Math.random() > 0.5 ? GROUND_Y - 30 : GROUND_Y - 60;
+            // Flying dinos always at a comfortable duck height (not too tricky)
             return {
-                type: 'flying', x: 820, y: flyY,
+                type: 'flying', x: 820, y: GROUND_Y - 30,
                 width: 40, height: 30, frame: 0, frameTimer: 0,
             };
         }
@@ -533,13 +582,14 @@
         ctx.restore();
     }
 
+    // Forgiving hitboxes for dinos too - smaller than they look
     function getObsHitbox(obs) {
         if (obs.type === 'small') {
-            return { x: obs.x + 4, y: obs.y + 2, w: 26, h: 36 };
+            return { x: obs.x + 8, y: obs.y + 6, w: 18, h: 26 };
         } else if (obs.type === 'big') {
-            return { x: obs.x + 6, y: obs.y + 4, w: 44, h: 50 };
+            return { x: obs.x + 12, y: obs.y + 10, w: 30, h: 38 };
         } else if (obs.type === 'flying') {
-            return { x: obs.x + 8, y: obs.y + 4, w: 30, h: 20 };
+            return { x: obs.x + 14, y: obs.y + 8, w: 20, h: 12 };
         }
     }
 
@@ -572,6 +622,23 @@
                 x: grady.x + 10, y: GROUND_Y + 46,
                 vx: -Math.random() * 2 - 1, vy: -Math.random() * 1.5,
                 life: 15, size: 2 + Math.random() * 3,
+            });
+        }
+    }
+
+    // ---- CELEBRATION STARS (when passing milestones) ----
+    let celebStars = [];
+
+    function spawnCelebration() {
+        for (let i = 0; i < 8; i++) {
+            celebStars.push({
+                x: grady.x + 16,
+                y: grady.y + 10,
+                vx: (Math.random() - 0.5) * 8,
+                vy: -Math.random() * 6 - 2,
+                life: 40,
+                color: ['#f5a623', '#e94560', '#2ecc71', '#4a90d9', '#f39c12'][Math.floor(Math.random() * 5)],
+                size: 3 + Math.random() * 4,
             });
         }
     }
@@ -656,6 +723,26 @@
         });
     }
 
+    function drawCelebStars() {
+        celebStars.forEach(s => {
+            ctx.fillStyle = s.color;
+            ctx.globalAlpha = s.life / 40;
+            ctx.beginPath();
+            // Draw a little star shape
+            const cx = s.x, cy = s.y, r = s.size;
+            for (let i = 0; i < 5; i++) {
+                const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+                const px = cx + Math.cos(angle) * r;
+                const py = cy + Math.sin(angle) * r;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        });
+    }
+
     function drawScore() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.roundRect(640, 8, 150, 40, 8);
@@ -665,7 +752,11 @@
         ctx.font = 'bold 16px "Courier New"';
         ctx.textAlign = 'right';
         ctx.fillText(`HI ${String(highScore).padStart(5, '0')}`, 780, 28);
-        ctx.fillText(`${String(score).padStart(5, '0')}`, 780, 44);
+
+        // Make current score big and golden for the kid
+        ctx.fillStyle = '#f5a623';
+        ctx.font = 'bold 18px "Courier New"';
+        ctx.fillText(`${String(score).padStart(5, '0')}`, 780, 46);
         ctx.textAlign = 'left';
     }
 
@@ -677,61 +768,86 @@
         grady.draw();
 
         ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.roundRect(150, 60, 500, 140, 16);
+        ctx.roundRect(120, 40, 560, 180, 16);
         ctx.fill();
 
         ctx.fillStyle = '#f5a623';
         ctx.font = 'bold 28px "Courier New"';
         ctx.textAlign = 'center';
-        ctx.fillText("GRADY'S DINO ADVENTURE", 400, 100);
+        ctx.fillText("GRADY'S DINO ADVENTURE", 400, 80);
 
         ctx.fillStyle = '#fff';
         ctx.font = '16px "Courier New"';
-        ctx.fillText('Help Grady run through', 400, 135);
-        ctx.fillText('the land of dinosaurs!', 400, 155);
+        ctx.fillText('Help Grady run through', 400, 115);
+        ctx.fillText('the land of dinosaurs!', 400, 135);
 
-        ctx.fillStyle = '#e94560';
-        ctx.font = 'bold 18px "Courier New"';
-        const startText = isTouchDevice ? 'Tap to Start!' : 'Press SPACE to Start';
-        ctx.fillText(startText, 400, 185);
+        // Big friendly start prompt
+        ctx.fillStyle = '#2ecc71';
+        ctx.font = 'bold 22px "Courier New"';
+        const startText = isTouchDevice ? 'Tap JUMP to Play!' : 'Press SPACE to Play!';
+        ctx.fillText(startText, 400, 175);
+
+        // Helpful hint for kid
+        if (isTouchDevice) {
+            ctx.fillStyle = '#aaa';
+            ctx.font = '13px "Courier New"';
+            ctx.fillText('Jump over the dinosaurs!', 400, 205);
+        }
+
         ctx.textAlign = 'left';
     }
 
     function drawGameOver() {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.roundRect(200, 70, 400, 130, 16);
+        ctx.roundRect(150, 50, 500, 170, 16);
         ctx.fill();
 
-        ctx.fillStyle = '#e94560';
-        ctx.font = 'bold 28px "Courier New"';
+        // Friendly message instead of scary game over
+        ctx.fillStyle = '#f5a623';
+        ctx.font = 'bold 26px "Courier New"';
         ctx.textAlign = 'center';
-        ctx.fillText('OH NO!', 400, 105);
+        ctx.fillText('GOOD TRY GRADY!', 400, 90);
 
         ctx.fillStyle = '#fff';
-        ctx.font = '16px "Courier New"';
-        ctx.fillText(`Grady scored: ${score} points!`, 400, 140);
+        ctx.font = 'bold 20px "Courier New"';
+        ctx.fillText(`Score: ${score}`, 400, 130);
 
-        ctx.fillStyle = '#f5a623';
-        ctx.font = 'bold 16px "Courier New"';
-        const retryText = isTouchDevice ? 'Tap to Try Again!' : 'Press SPACE to Try Again';
-        ctx.fillText(retryText, 400, 175);
+        if (score >= highScore && score > 0) {
+            ctx.fillStyle = '#f5a623';
+            ctx.font = 'bold 16px "Courier New"';
+            ctx.fillText('NEW HIGH SCORE!', 400, 155);
+        }
+
+        ctx.fillStyle = '#2ecc71';
+        ctx.font = 'bold 20px "Courier New"';
+        const retryText = isTouchDevice ? 'Tap to Play Again!' : 'Press SPACE to Play Again!';
+        ctx.fillText(retryText, 400, 195);
+
         ctx.textAlign = 'left';
     }
 
-    // ---- OBSTACLE SPAWNING ----
+    // ---- OBSTACLE SPAWNING (kid-friendly) ----
     let spawnTimer = 0;
-    let minSpawnInterval = 60;
 
     function spawnObstacle() {
         spawnTimer++;
-        const interval = Math.max(minSpawnInterval, 100 - speed * 5);
 
-        if (spawnTimer > interval + Math.random() * 40) {
+        // Much bigger gaps between obstacles - gives a 4yo time to react
+        // At start speed: gap ~170 frames. Even at max speed: gap ~120 frames
+        const baseInterval = 150;
+        const interval = Math.max(100, baseInterval - speed * 4);
+
+        // Extra random padding so it's never a wall of dinos
+        if (spawnTimer > interval + Math.random() * 80) {
             spawnTimer = 0;
+
+            // Only small dinos until score 300 (just jump!)
+            // Big dinos start appearing at 300
+            // Flying dinos (need to duck) not until score 800
             const rand = Math.random();
-            if (score > 500 && rand < 0.2) {
+            if (score > 800 && rand < 0.15) {
                 obstacles.push(createDino('flying'));
-            } else if (score > 200 && rand < 0.4) {
+            } else if (score > 300 && rand < 0.3) {
                 obstacles.push(createDino('big'));
             } else {
                 obstacles.push(createDino('small'));
@@ -740,9 +856,13 @@
     }
 
     // ---- MAIN UPDATE ----
+    let lastMilestone = 0;
+
     function update() {
         frameCount++;
-        speed = Math.min(MAX_SPEED, INITIAL_SPEED + score / 500);
+
+        // Very gradual speed increase
+        speed = Math.min(MAX_SPEED, INITIAL_SPEED + score / SPEED_RAMP);
 
         grady.update();
 
@@ -759,7 +879,14 @@
             }
         }
 
+        // Score every 3 frames
         if (frameCount % 3 === 0) score++;
+
+        // Celebration every 50 points (more frequent rewards for a kid!)
+        if (score > 0 && score % 50 === 0 && score !== lastMilestone) {
+            lastMilestone = score;
+            spawnCelebration();
+        }
 
         clouds.forEach(cloud => {
             cloud.x -= speed * 0.2;
@@ -788,6 +915,15 @@
         });
         particles = particles.filter(p => p.life > 0);
 
+        // Update celebration stars
+        celebStars.forEach(s => {
+            s.x += s.vx;
+            s.y += s.vy;
+            s.vy += 0.15;
+            s.life--;
+        });
+        celebStars = celebStars.filter(s => s.life > 0);
+
         spawnObstacle();
     }
 
@@ -808,10 +944,12 @@
 
         obstacles.forEach(obs => drawDino(obs));
         grady.draw();
+        drawCelebStars();
         drawScore();
 
-        if (score > 0 && score % 100 < 3) {
-            ctx.fillStyle = `rgba(255, 255, 255, ${0.3 - (score % 100) * 0.1})`;
+        // Milestone flash
+        if (score > 0 && score % 50 < 3) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.3 - (score % 50) * 0.1})`;
             ctx.fillRect(0, 0, 800, 300);
         }
 
@@ -836,8 +974,10 @@
         speed = INITIAL_SPEED;
         obstacles = [];
         particles = [];
+        celebStars = [];
         spawnTimer = 0;
         frameCount = 0;
+        lastMilestone = 0;
         grady.reset();
     }
 
@@ -849,7 +989,9 @@
                 grady.jump();
             }
         } else if (action === 'duck_start') {
-            if (gameState === 'playing') {
+            if (gameState === 'start' || gameState === 'gameover') {
+                startGame();
+            } else if (gameState === 'playing') {
                 grady.duck(true);
             }
         } else if (action === 'duck_end') {
@@ -875,8 +1017,7 @@
         }
     });
 
-    // ---- TOUCH CONTROLS (on-screen buttons) ----
-    // Jump button
+    // ---- TOUCH CONTROLS ----
     btnJump.addEventListener('touchstart', (e) => {
         e.preventDefault();
         handleAction('jump');
@@ -887,14 +1028,9 @@
         handleAction('jump');
     });
 
-    // Duck button - hold to duck
     btnDuck.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        if (gameState === 'start' || gameState === 'gameover') {
-            startGame();
-        } else {
-            handleAction('duck_start');
-        }
+        handleAction('duck_start');
     }, { passive: false });
 
     btnDuck.addEventListener('touchend', (e) => {
@@ -902,24 +1038,20 @@
         handleAction('duck_end');
     }, { passive: false });
 
-    btnDuck.addEventListener('touchcancel', (e) => {
+    btnDuck.addEventListener('touchcancel', () => {
         handleAction('duck_end');
     });
 
     btnDuck.addEventListener('mousedown', (e) => {
         e.preventDefault();
-        if (gameState === 'start' || gameState === 'gameover') {
-            startGame();
-        } else {
-            handleAction('duck_start');
-        }
+        handleAction('duck_start');
     });
 
     btnDuck.addEventListener('mouseup', () => {
         handleAction('duck_end');
     });
 
-    // Canvas tap for jump (fallback for simple tapping on the game)
+    // Canvas tap for jump
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
         handleAction('jump');
@@ -964,7 +1096,8 @@
         };
     }
 
-    // Start the loop
+    // Initial resize and start
+    resizeCanvas();
     gameLoop();
     </script>
 </body>

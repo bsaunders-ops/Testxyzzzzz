@@ -335,117 +335,188 @@
             ctx.save();
 
             if (this.isDucking) {
-                ctx.fillStyle = '#4a90d9';
+                // === DUCKING GRADY ===
+                // Dino pajama body (horizontal)
+                ctx.fillStyle = '#f5efe6'; // cream pajamas
                 ctx.fillRect(x, y + 24, 36, 14);
+                // Little dino prints on pajamas
+                ctx.fillStyle = '#c4a882';
+                ctx.fillRect(x + 6, y + 27, 4, 3);
+                ctx.fillRect(x + 16, y + 28, 3, 3);
+                ctx.fillRect(x + 26, y + 27, 3, 2);
 
-                ctx.fillStyle = '#ffcc99';
+                // Head
+                ctx.fillStyle = '#ffddbb'; // warm skin
                 ctx.beginPath();
                 ctx.arc(x + 32, y + 26, 8, 0, Math.PI * 2);
                 ctx.fill();
 
-                ctx.fillStyle = '#8B4513';
+                // Blonde hair (long, past ears - like the photo)
+                ctx.fillStyle = '#dbb87a'; // sandy blonde
                 ctx.beginPath();
-                ctx.arc(x + 32, y + 22, 7, Math.PI, 2 * Math.PI);
+                ctx.arc(x + 32, y + 22, 8, Math.PI, 2 * Math.PI);
                 ctx.fill();
+                // Hair hanging down sides
+                ctx.fillRect(x + 24, y + 20, 3, 10);
+                ctx.fillRect(x + 37, y + 20, 3, 10);
+                // Fringe/bangs
+                ctx.fillStyle = '#c9a665';
+                ctx.fillRect(x + 26, y + 18, 12, 4);
 
-                ctx.fillStyle = '#333';
+                // Eye
+                ctx.fillStyle = '#5a8fcb'; // blue eyes
                 ctx.fillRect(x + 35, y + 25, 2, 2);
 
-                ctx.fillStyle = '#555';
+                // Pajama pants (ducked)
+                ctx.fillStyle = '#f5efe6';
                 ctx.fillRect(x + 2, y + 38, 10, 6);
                 ctx.fillRect(x + 14, y + 38, 10, 6);
+                // Dino print on pants
+                ctx.fillStyle = '#c4a882';
+                ctx.fillRect(x + 4, y + 39, 3, 2);
 
-                ctx.fillStyle = '#e94560';
-                ctx.fillRect(x, y + 42, 10, 4);
-                ctx.fillRect(x + 12, y + 42, 10, 4);
+                // Little socks/slippers
+                ctx.fillStyle = '#6b9e7a';
+                ctx.fillRect(x, y + 43, 10, 3);
+                ctx.fillRect(x + 12, y + 43, 10, 3);
             } else {
-                ctx.fillStyle = '#4a90d9';
-                ctx.fillRect(x + 8, y + 16, 16, 16);
+                // === STANDING/RUNNING GRADY ===
 
-                ctx.fillStyle = '#2ecc71';
-                ctx.fillRect(x + 12, y + 20, 8, 6);
-                ctx.fillStyle = '#27ae60';
-                ctx.fillRect(x + 14, y + 18, 4, 2);
-                ctx.fillRect(x + 11, y + 22, 2, 2);
+                // Pajama top (cream with dino print)
+                ctx.fillStyle = '#f5efe6'; // cream color
+                ctx.fillRect(x + 7, y + 16, 18, 16);
 
-                ctx.fillStyle = '#ffcc99';
+                // Dino print on pajama shirt - little brown dino shapes
+                ctx.fillStyle = '#c4a882';
+                // Dino body
+                ctx.fillRect(x + 10, y + 20, 6, 4);
+                // Dino head
+                ctx.fillRect(x + 15, y + 18, 3, 3);
+                // Dino tail
+                ctx.fillRect(x + 9, y + 21, 2, 2);
+                // Dino legs
+                ctx.fillRect(x + 11, y + 24, 2, 2);
+                ctx.fillRect(x + 14, y + 24, 2, 2);
+                // Second little dino
+                ctx.fillRect(x + 18, y + 26, 4, 3);
+                ctx.fillRect(x + 21, y + 25, 2, 2);
+
+                // Head
+                ctx.fillStyle = '#ffddbb'; // warm skin tone
                 ctx.beginPath();
                 ctx.arc(x + 16, y + 10, 10, 0, Math.PI * 2);
                 ctx.fill();
 
-                ctx.fillStyle = '#8B4513';
+                // Blonde hair - longer, past ears, with bangs (like photo)
+                ctx.fillStyle = '#dbb87a'; // sandy blonde
+                // Top of hair
                 ctx.beginPath();
-                ctx.arc(x + 16, y + 6, 9, Math.PI, 2 * Math.PI);
+                ctx.arc(x + 16, y + 6, 10, Math.PI, 2 * Math.PI);
                 ctx.fill();
-                ctx.beginPath();
-                ctx.moveTo(x + 12, y + 0);
-                ctx.lineTo(x + 16, y + 4);
-                ctx.lineTo(x + 20, y - 1);
-                ctx.fill();
+                // Hair sides hanging past ears
+                ctx.fillRect(x + 6, y + 4, 4, 16);  // left side hair
+                ctx.fillRect(x + 22, y + 4, 4, 16);  // right side hair
+                // Back of hair
+                ctx.fillRect(x + 8, y + 2, 16, 6);
+                // Bangs/fringe across forehead
+                ctx.fillStyle = '#c9a665'; // slightly darker bangs
+                ctx.fillRect(x + 8, y + 2, 14, 5);
+                // Hair wisp
+                ctx.fillStyle = '#dbb87a';
+                ctx.fillRect(x + 10, y + 0, 3, 3);
+                ctx.fillRect(x + 18, y + 0, 3, 2);
 
-                ctx.fillStyle = '#333';
+                // Eyes - blue
+                ctx.fillStyle = '#5a8fcb';
                 if (gameState === 'gameover') {
+                    // Sad eyes
                     ctx.lineWidth = 2;
-                    ctx.strokeStyle = '#333';
+                    ctx.strokeStyle = '#5a8fcb';
                     ctx.beginPath();
-                    ctx.moveTo(x + 19, y + 8);
+                    ctx.moveTo(x + 19, y + 9);
                     ctx.lineTo(x + 23, y + 12);
-                    ctx.moveTo(x + 23, y + 8);
+                    ctx.moveTo(x + 23, y + 9);
                     ctx.lineTo(x + 19, y + 12);
                     ctx.stroke();
                 } else {
                     ctx.fillRect(x + 20, y + 9, 3, 3);
+                    // Eye sparkle
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(x + 21, y + 9, 1, 1);
                 }
 
+                // Rosy cheeks
+                ctx.fillStyle = 'rgba(255, 150, 150, 0.3)';
+                ctx.beginPath();
+                ctx.arc(x + 23, y + 14, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Smile
                 if (gameState !== 'gameover') {
-                    ctx.strokeStyle = '#333';
-                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = '#c47a5a';
+                    ctx.lineWidth = 1.5;
                     ctx.beginPath();
-                    ctx.arc(x + 18, y + 13, 4, 0.1, Math.PI - 0.1);
+                    ctx.arc(x + 18, y + 14, 4, 0.1, Math.PI - 0.1);
                     ctx.stroke();
                 } else {
-                    ctx.strokeStyle = '#333';
-                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = '#c47a5a';
+                    ctx.lineWidth = 1.5;
                     ctx.beginPath();
-                    ctx.arc(x + 18, y + 18, 4, Math.PI + 0.3, -0.3);
+                    ctx.arc(x + 18, y + 18, 3, Math.PI + 0.4, -0.4);
                     ctx.stroke();
                 }
 
-                ctx.fillStyle = '#ffcc99';
+                // Arms (skin showing from pajama sleeves)
+                ctx.fillStyle = '#ffddbb';
                 const armSwing = this.isJumping ? -30 : Math.sin(this.runFrame * Math.PI / 2) * 20;
                 ctx.save();
-                ctx.translate(x + 10, y + 18);
+                ctx.translate(x + 9, y + 18);
                 ctx.rotate((armSwing - 10) * Math.PI / 180);
-                ctx.fillRect(-2, 0, 4, 12);
+                // Pajama sleeve
+                ctx.fillStyle = '#f5efe6';
+                ctx.fillRect(-3, 0, 5, 6);
+                // Bare hand
+                ctx.fillStyle = '#ffddbb';
+                ctx.fillRect(-2, 6, 4, 7);
                 ctx.restore();
 
                 ctx.save();
-                ctx.translate(x + 22, y + 18);
+                ctx.translate(x + 23, y + 18);
                 ctx.rotate((-armSwing - 10) * Math.PI / 180);
-                ctx.fillRect(-2, 0, 4, 12);
+                ctx.fillStyle = '#f5efe6';
+                ctx.fillRect(-2, 0, 5, 6);
+                ctx.fillStyle = '#ffddbb';
+                ctx.fillRect(-1, 6, 4, 7);
                 ctx.restore();
 
-                ctx.fillStyle = '#555';
-                ctx.fillRect(x + 8, y + 30, 16, 6);
+                // Pajama pants
+                ctx.fillStyle = '#f5efe6';
+                ctx.fillRect(x + 7, y + 30, 18, 8);
+                // Dino print on pants
+                ctx.fillStyle = '#c4a882';
+                ctx.fillRect(x + 9, y + 32, 3, 3);
+                ctx.fillRect(x + 18, y + 31, 4, 3);
 
-                ctx.fillStyle = '#ffcc99';
+                // Legs (pajama legs)
+                ctx.fillStyle = '#f5efe6';
                 if (this.isJumping) {
-                    ctx.fillRect(x + 8, y + 36, 6, 8);
-                    ctx.fillRect(x + 18, y + 36, 6, 8);
+                    ctx.fillRect(x + 8, y + 36, 6, 10);
+                    ctx.fillRect(x + 18, y + 36, 6, 10);
                 } else {
                     const legOffset = Math.sin(this.runFrame * Math.PI / 2) * 5;
-                    ctx.fillRect(x + 9, y + 36, 5, 8 + legOffset);
-                    ctx.fillRect(x + 18, y + 36, 5, 8 - legOffset);
+                    ctx.fillRect(x + 8, y + 36, 6, 10 + legOffset);
+                    ctx.fillRect(x + 18, y + 36, 6, 10 - legOffset);
                 }
 
-                ctx.fillStyle = '#e94560';
+                // Socks/slippers (dark green like in the photo)
+                ctx.fillStyle = '#5a8a6a';
                 if (this.isJumping) {
-                    ctx.fillRect(x + 7, y + 44, 8, 4);
-                    ctx.fillRect(x + 17, y + 44, 8, 4);
+                    ctx.fillRect(x + 7, y + 46, 8, 3);
+                    ctx.fillRect(x + 17, y + 46, 8, 3);
                 } else {
                     const legOffset = Math.sin(this.runFrame * Math.PI / 2) * 5;
-                    ctx.fillRect(x + 7, y + 44 + legOffset, 8, 4);
-                    ctx.fillRect(x + 17, y + 44 - legOffset, 8, 4);
+                    ctx.fillRect(x + 7, y + 46 + legOffset, 8, 3);
+                    ctx.fillRect(x + 17, y + 46 - legOffset, 8, 3);
                 }
             }
 

@@ -2,61 +2,166 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Grady's Dino">
     <title>Grady's Dinosaur Adventure</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
         }
 
         body {
             background: #1a1a2e;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             font-family: 'Courier New', monospace;
-            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .game-wrapper {
             text-align: center;
+            width: 100%;
+            max-width: 840px;
+            padding: 8px;
         }
 
         h1 {
             color: #e94560;
-            font-size: 2rem;
-            margin-bottom: 10px;
+            font-size: 1.4rem;
+            margin-bottom: 4px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             letter-spacing: 2px;
         }
 
         .subtitle {
             color: #f5a623;
-            font-size: 0.9rem;
-            margin-bottom: 15px;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
         }
 
-        canvas {
+        #gameCanvas {
             border: 3px solid #e94560;
             border-radius: 8px;
             background: #87CEEB;
             display: block;
             margin: 0 auto;
             cursor: pointer;
+            width: 100%;
+            max-width: 800px;
+            touch-action: none;
+        }
+
+        /* ---- TOUCH CONTROLS ---- */
+        .touch-controls {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            margin: 10px auto 0;
+            gap: 12px;
+            justify-content: center;
+            padding: 0 10px;
+        }
+
+        .touch-btn {
+            flex: 1;
+            max-width: 200px;
+            height: 70px;
+            border: 3px solid;
+            border-radius: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.05s;
+        }
+
+        .touch-btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-jump {
+            background: rgba(46, 204, 113, 0.25);
+            border-color: #2ecc71;
+            color: #2ecc71;
+        }
+
+        .btn-jump:active {
+            background: rgba(46, 204, 113, 0.5);
+        }
+
+        .btn-duck {
+            background: rgba(243, 156, 18, 0.25);
+            border-color: #f39c12;
+            color: #f39c12;
+        }
+
+        .btn-duck:active {
+            background: rgba(243, 156, 18, 0.5);
+        }
+
+        .btn-icon {
+            font-size: 1.6rem;
         }
 
         .controls-info {
             color: #aaa;
-            font-size: 0.8rem;
-            margin-top: 12px;
+            font-size: 0.7rem;
+            margin-top: 8px;
         }
 
         .controls-info span {
             color: #e94560;
             font-weight: bold;
+        }
+
+        /* Show touch controls on touch devices */
+        @media (pointer: coarse) {
+            .touch-controls {
+                display: flex;
+            }
+            .controls-info {
+                display: none;
+            }
+        }
+
+        /* Smaller screens */
+        @media (max-width: 500px) {
+            h1 { font-size: 1.1rem; }
+            .subtitle { font-size: 0.65rem; }
+            .game-wrapper { padding: 4px; }
+            .touch-btn {
+                height: 60px;
+                font-size: 1rem;
+                border-radius: 12px;
+            }
+        }
+
+        /* Landscape phone - maximize game area */
+        @media (max-height: 450px) and (orientation: landscape) {
+            h1, .subtitle { display: none; }
+            .game-wrapper { padding: 2px; }
+            .touch-controls { margin-top: 4px; gap: 8px; }
+            .touch-btn { height: 50px; font-size: 0.9rem; }
         }
     </style>
 </head>
@@ -65,12 +170,22 @@
         <h1>Grady's Dinosaur Adventure</h1>
         <p class="subtitle">Help Grady run through the land of dinosaurs!</p>
         <canvas id="gameCanvas" width="800" height="300"></canvas>
-        <p class="controls-info">Press <span>SPACE</span> or <span>TAP</span> to jump &mdash; <span>DOWN ARROW</span> to duck</p>
+        <div class="touch-controls">
+            <button class="touch-btn btn-jump" id="btnJump">
+                <span class="btn-icon">&#8593;</span> JUMP
+            </button>
+            <button class="touch-btn btn-duck" id="btnDuck">
+                <span class="btn-icon">&#8595;</span> DUCK
+            </button>
+        </div>
+        <p class="controls-info">Press <span>SPACE</span> to jump &mdash; <span>DOWN ARROW</span> to duck</p>
     </div>
 
     <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const btnJump = document.getElementById('btnJump');
+    const btnDuck = document.getElementById('btnDuck');
 
     // Game constants
     const GROUND_Y = 240;
@@ -85,6 +200,13 @@
     let highScore = 0;
     let speed = INITIAL_SPEED;
     let frameCount = 0;
+    let isTouchDevice = false;
+
+    // Detect touch device
+    function detectTouch() {
+        isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    }
+    detectTouch();
 
     // Clouds
     let clouds = [
@@ -134,7 +256,6 @@
         },
 
         update() {
-            // Gravity
             this.vy += GRAVITY;
             this.y += this.vy;
 
@@ -144,7 +265,6 @@
                 this.isJumping = false;
             }
 
-            // Animate run
             this.runTimer++;
             if (this.runTimer > 6) {
                 this.runTimer = 0;
@@ -166,73 +286,56 @@
             ctx.save();
 
             if (this.isDucking) {
-                // Ducking Grady - low profile
-                // Body (horizontal)
-                ctx.fillStyle = '#4a90d9'; // blue shirt
+                ctx.fillStyle = '#4a90d9';
                 ctx.fillRect(x, y + 24, 36, 14);
 
-                // Head
-                ctx.fillStyle = '#ffcc99'; // skin
+                ctx.fillStyle = '#ffcc99';
                 ctx.beginPath();
                 ctx.arc(x + 32, y + 26, 8, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Hair
                 ctx.fillStyle = '#8B4513';
                 ctx.beginPath();
                 ctx.arc(x + 32, y + 22, 7, Math.PI, 2 * Math.PI);
                 ctx.fill();
 
-                // Eye
                 ctx.fillStyle = '#333';
                 ctx.fillRect(x + 35, y + 25, 2, 2);
 
-                // Legs tucked
                 ctx.fillStyle = '#555';
                 ctx.fillRect(x + 2, y + 38, 10, 6);
                 ctx.fillRect(x + 14, y + 38, 10, 6);
 
-                // Shoes
                 ctx.fillStyle = '#e94560';
                 ctx.fillRect(x, y + 42, 10, 4);
                 ctx.fillRect(x + 12, y + 42, 10, 4);
             } else {
-                // Standing/Running Grady
-
-                // Body / Shirt
-                ctx.fillStyle = '#4a90d9'; // blue shirt
+                ctx.fillStyle = '#4a90d9';
                 ctx.fillRect(x + 8, y + 16, 16, 16);
 
-                // Shirt detail - dino graphic on shirt!
                 ctx.fillStyle = '#2ecc71';
                 ctx.fillRect(x + 12, y + 20, 8, 6);
                 ctx.fillStyle = '#27ae60';
                 ctx.fillRect(x + 14, y + 18, 4, 2);
-                // tiny dino tail
                 ctx.fillRect(x + 11, y + 22, 2, 2);
 
-                // Head
                 ctx.fillStyle = '#ffcc99';
                 ctx.beginPath();
                 ctx.arc(x + 16, y + 10, 10, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Hair (brown, messy boy hair)
                 ctx.fillStyle = '#8B4513';
                 ctx.beginPath();
                 ctx.arc(x + 16, y + 6, 9, Math.PI, 2 * Math.PI);
                 ctx.fill();
-                // Hair tuft
                 ctx.beginPath();
                 ctx.moveTo(x + 12, y + 0);
                 ctx.lineTo(x + 16, y + 4);
                 ctx.lineTo(x + 20, y - 1);
                 ctx.fill();
 
-                // Eyes
                 ctx.fillStyle = '#333';
                 if (gameState === 'gameover') {
-                    // X eyes
                     ctx.lineWidth = 2;
                     ctx.strokeStyle = '#333';
                     ctx.beginPath();
@@ -245,7 +348,6 @@
                     ctx.fillRect(x + 20, y + 9, 3, 3);
                 }
 
-                // Smile
                 if (gameState !== 'gameover') {
                     ctx.strokeStyle = '#333';
                     ctx.lineWidth = 1;
@@ -253,7 +355,6 @@
                     ctx.arc(x + 18, y + 13, 4, 0.1, Math.PI - 0.1);
                     ctx.stroke();
                 } else {
-                    // Frown
                     ctx.strokeStyle = '#333';
                     ctx.lineWidth = 1;
                     ctx.beginPath();
@@ -261,7 +362,6 @@
                     ctx.stroke();
                 }
 
-                // Arms
                 ctx.fillStyle = '#ffcc99';
                 const armSwing = this.isJumping ? -30 : Math.sin(this.runFrame * Math.PI / 2) * 20;
                 ctx.save();
@@ -276,14 +376,11 @@
                 ctx.fillRect(-2, 0, 4, 12);
                 ctx.restore();
 
-                // Shorts
                 ctx.fillStyle = '#555';
                 ctx.fillRect(x + 8, y + 30, 16, 6);
 
-                // Legs (animated)
                 ctx.fillStyle = '#ffcc99';
                 if (this.isJumping) {
-                    // Legs tucked
                     ctx.fillRect(x + 8, y + 36, 6, 8);
                     ctx.fillRect(x + 18, y + 36, 6, 8);
                 } else {
@@ -292,7 +389,6 @@
                     ctx.fillRect(x + 18, y + 36, 5, 8 - legOffset);
                 }
 
-                // Shoes (red sneakers!)
                 ctx.fillStyle = '#e94560';
                 if (this.isJumping) {
                     ctx.fillRect(x + 7, y + 44, 8, 4);
@@ -314,34 +410,19 @@
     function createDino(type) {
         if (type === 'small') {
             return {
-                type: 'small',
-                x: 820,
-                y: GROUND_Y + 8,
-                width: 30,
-                height: 40,
-                frame: 0,
-                frameTimer: 0,
+                type: 'small', x: 820, y: GROUND_Y + 8,
+                width: 30, height: 40, frame: 0, frameTimer: 0,
             };
         } else if (type === 'big') {
             return {
-                type: 'big',
-                x: 820,
-                y: GROUND_Y - 12,
-                width: 50,
-                height: 60,
-                frame: 0,
-                frameTimer: 0,
+                type: 'big', x: 820, y: GROUND_Y - 12,
+                width: 50, height: 60, frame: 0, frameTimer: 0,
             };
         } else if (type === 'flying') {
             const flyY = Math.random() > 0.5 ? GROUND_Y - 30 : GROUND_Y - 60;
             return {
-                type: 'flying',
-                x: 820,
-                y: flyY,
-                width: 40,
-                height: 30,
-                frame: 0,
-                frameTimer: 0,
+                type: 'flying', x: 820, y: flyY,
+                width: 40, height: 30, frame: 0, frameTimer: 0,
             };
         }
     }
@@ -359,27 +440,19 @@
         ctx.save();
 
         if (obs.type === 'small') {
-            // Small raptor-like dino
             ctx.fillStyle = '#2ecc71';
-            // Body
             ctx.fillRect(x + 5, y + 8, 18, 14);
-            // Head
             ctx.fillRect(x + 20, y + 2, 12, 10);
-            // Eye
             ctx.fillStyle = '#c0392b';
             ctx.fillRect(x + 27, y + 4, 3, 3);
-            // Mouth
             ctx.fillStyle = '#27ae60';
             ctx.fillRect(x + 22, y + 10, 10, 3);
-            // Teeth
             ctx.fillStyle = 'white';
             ctx.fillRect(x + 24, y + 10, 2, 2);
             ctx.fillRect(x + 28, y + 10, 2, 2);
-            // Tail
             ctx.fillStyle = '#2ecc71';
             ctx.fillRect(x, y + 6, 8, 6);
             ctx.fillRect(x - 4, y + 4, 6, 4);
-            // Legs
             ctx.fillStyle = '#27ae60';
             if (obs.frame === 0) {
                 ctx.fillRect(x + 8, y + 22, 4, 10);
@@ -388,42 +461,30 @@
                 ctx.fillRect(x + 8, y + 22, 4, 8);
                 ctx.fillRect(x + 18, y + 22, 4, 10);
             }
-            // Tiny arms
             ctx.fillRect(x + 20, y + 14, 3, 5);
-            // Spikes
             ctx.fillStyle = '#f39c12';
             ctx.fillRect(x + 10, y + 6, 3, 3);
             ctx.fillRect(x + 16, y + 5, 3, 4);
         } else if (obs.type === 'big') {
-            // Big T-Rex style dino
             ctx.fillStyle = '#8e44ad';
-            // Body
             ctx.fillRect(x + 8, y + 12, 30, 24);
-            // Head
             ctx.fillRect(x + 32, y + 2, 18, 18);
-            // Jaw
             ctx.fillRect(x + 35, y + 16, 16, 8);
-            // Eye
             ctx.fillStyle = '#e74c3c';
             ctx.fillRect(x + 42, y + 6, 4, 4);
-            // Pupil
             ctx.fillStyle = '#333';
             ctx.fillRect(x + 43, y + 7, 2, 2);
-            // Teeth
             ctx.fillStyle = 'white';
             for (let i = 0; i < 4; i++) {
                 ctx.fillRect(x + 37 + i * 4, y + 16, 2, 3);
             }
-            // Tail
             ctx.fillStyle = '#8e44ad';
             ctx.fillRect(x, y + 8, 12, 10);
             ctx.fillRect(x - 6, y + 4, 10, 8);
-            // Spines
             ctx.fillStyle = '#e74c3c';
             ctx.fillRect(x + 14, y + 8, 4, 5);
             ctx.fillRect(x + 22, y + 7, 4, 6);
             ctx.fillRect(x + 30, y + 9, 4, 4);
-            // Legs
             ctx.fillStyle = '#7d3c98';
             if (obs.frame === 0) {
                 ctx.fillRect(x + 14, y + 36, 6, 16);
@@ -432,51 +493,39 @@
                 ctx.fillRect(x + 14, y + 36, 6, 14);
                 ctx.fillRect(x + 28, y + 36, 6, 16);
             }
-            // Feet
             ctx.fillRect(x + 12, y + 50, 10, 4);
             ctx.fillRect(x + 26, y + 48, 10, 4);
-            // Tiny arms (classic T-Rex!)
             ctx.fillStyle = '#9b59b6';
             ctx.fillRect(x + 34, y + 22, 4, 7);
             ctx.fillRect(x + 36, y + 28, 3, 2);
         } else if (obs.type === 'flying') {
-            // Pterodactyl
             ctx.fillStyle = '#e67e22';
-            // Body
             ctx.fillRect(x + 12, y + 10, 16, 10);
-            // Head
             ctx.fillRect(x + 26, y + 8, 10, 8);
-            // Beak
             ctx.fillStyle = '#f39c12';
             ctx.fillRect(x + 34, y + 10, 8, 4);
-            // Crest
             ctx.fillStyle = '#e74c3c';
             ctx.beginPath();
             ctx.moveTo(x + 28, y + 8);
             ctx.lineTo(x + 24, y);
             ctx.lineTo(x + 32, y + 8);
             ctx.fill();
-            // Eye
             ctx.fillStyle = '#333';
             ctx.fillRect(x + 30, y + 10, 2, 2);
-            // Wings
             ctx.fillStyle = '#d35400';
             if (obs.frame === 0) {
-                // Wings up
                 ctx.beginPath();
                 ctx.moveTo(x + 14, y + 10);
                 ctx.lineTo(x, y - 6);
                 ctx.lineTo(x + 24, y + 10);
                 ctx.fill();
             } else {
-                // Wings down
                 ctx.beginPath();
                 ctx.moveTo(x + 14, y + 10);
                 ctx.lineTo(x, y + 22);
                 ctx.lineTo(x + 24, y + 10);
                 ctx.fill();
             }
-            // Tail
             ctx.fillStyle = '#e67e22';
             ctx.fillRect(x + 4, y + 12, 10, 5);
         }
@@ -494,7 +543,6 @@
         }
     }
 
-    // ---- COLLISION DETECTION ----
     function checkCollision(a, b) {
         return a.x < b.x + b.w &&
                a.x + a.w > b.x &&
@@ -516,25 +564,19 @@
         bushes.push({ x: Math.random() * 800, size: 8 + Math.random() * 12 });
     }
 
-    // ---- PARTICLES (dust when running) ----
     let particles = [];
 
     function spawnDust() {
         if (!grady.isJumping && !grady.isDucking && frameCount % 4 === 0) {
             particles.push({
-                x: grady.x + 10,
-                y: GROUND_Y + 46,
-                vx: -Math.random() * 2 - 1,
-                vy: -Math.random() * 1.5,
-                life: 15,
-                size: 2 + Math.random() * 3,
+                x: grady.x + 10, y: GROUND_Y + 46,
+                vx: -Math.random() * 2 - 1, vy: -Math.random() * 1.5,
+                life: 15, size: 2 + Math.random() * 3,
             });
         }
     }
 
-    // ---- DRAWING FUNCTIONS ----
     function drawSky() {
-        // Gradient sky
         const gradient = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
         gradient.addColorStop(0, '#87CEEB');
         gradient.addColorStop(1, '#b8e6f0');
@@ -564,7 +606,6 @@
             ctx.lineTo(m.x + 120, GROUND_Y);
             ctx.fill();
 
-            // Snow cap
             ctx.fillStyle = 'rgba(255,255,255,0.5)';
             ctx.beginPath();
             ctx.moveTo(m.x + 15, GROUND_Y - m.h + 10);
@@ -575,29 +616,24 @@
     }
 
     function drawGround() {
-        // Main ground
         ctx.fillStyle = '#8B7355';
         ctx.fillRect(0, GROUND_Y + 48, 800, 60);
 
-        // Grass layer
         ctx.fillStyle = '#4CAF50';
         ctx.fillRect(0, GROUND_Y + 46, 800, 8);
 
-        // Grass blades
         ctx.fillStyle = '#66BB6A';
         for (let i = 0; i < 80; i++) {
             const gx = ((i * 10 + groundOffset) % 820) - 10;
             ctx.fillRect(gx, GROUND_Y + 43, 2, 6);
         }
 
-        // Ground texture
         ctx.fillStyle = '#7a6545';
         for (let i = 0; i < 40; i++) {
             const gx = ((i * 20 + groundOffset * 0.5) % 840) - 20;
             ctx.fillRect(gx, GROUND_Y + 56 + (i % 3) * 8, 6, 2);
         }
 
-        // Bushes
         bushes.forEach(bush => {
             ctx.fillStyle = '#388E3C';
             const bx = ((bush.x + groundOffset * 0.3) % 840) - 20;
@@ -621,7 +657,6 @@
     }
 
     function drawScore() {
-        // Score background
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         ctx.roundRect(640, 8, 150, 40, 8);
         ctx.fill();
@@ -639,10 +674,8 @@
         drawMountains();
         drawClouds();
         drawGround();
-
         grady.draw();
 
-        // Title card
         ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
         ctx.roundRect(150, 60, 500, 140, 16);
         ctx.fill();
@@ -659,8 +692,8 @@
 
         ctx.fillStyle = '#e94560';
         ctx.font = 'bold 18px "Courier New"';
-        ctx.fillText('Press SPACE to Start', 400, 185);
-
+        const startText = isTouchDevice ? 'Tap to Start!' : 'Press SPACE to Start';
+        ctx.fillText(startText, 400, 185);
         ctx.textAlign = 'left';
     }
 
@@ -680,8 +713,8 @@
 
         ctx.fillStyle = '#f5a623';
         ctx.font = 'bold 16px "Courier New"';
-        ctx.fillText('Press SPACE to Try Again', 400, 175);
-
+        const retryText = isTouchDevice ? 'Tap to Try Again!' : 'Press SPACE to Try Again';
+        ctx.fillText(retryText, 400, 175);
         ctx.textAlign = 'left';
     }
 
@@ -709,21 +742,13 @@
     // ---- MAIN UPDATE ----
     function update() {
         frameCount++;
-
-        // Increase speed over time
         speed = Math.min(MAX_SPEED, INITIAL_SPEED + score / 500);
 
         grady.update();
 
-        // Move obstacles
-        obstacles.forEach(obs => {
-            obs.x -= speed;
-        });
-
-        // Remove off-screen obstacles
+        obstacles.forEach(obs => { obs.x -= speed; });
         obstacles = obstacles.filter(obs => obs.x > -60);
 
-        // Check collisions
         const gradyBox = grady.getHitbox();
         for (const obs of obstacles) {
             const obsBox = getObsHitbox(obs);
@@ -734,15 +759,8 @@
             }
         }
 
-        // Score
         if (frameCount % 3 === 0) score++;
 
-        // 100-point milestone flash
-        if (score > 0 && score % 100 === 0 && frameCount % 3 === 0) {
-            // Flash effect handled in draw
-        }
-
-        // Move clouds
         clouds.forEach(cloud => {
             cloud.x -= speed * 0.2;
             if (cloud.x < -50) {
@@ -752,7 +770,6 @@
             }
         });
 
-        // Move mountains (parallax)
         mountains.forEach(m => {
             m.x -= speed * 0.1;
             if (m.x < -120) {
@@ -761,10 +778,8 @@
             }
         });
 
-        // Ground scroll
         groundOffset -= speed;
 
-        // Dust particles
         spawnDust();
         particles.forEach(p => {
             p.x += p.vx;
@@ -773,7 +788,6 @@
         });
         particles = particles.filter(p => p.life > 0);
 
-        // Spawn
         spawnObstacle();
     }
 
@@ -792,15 +806,10 @@
         drawGround();
         drawParticles();
 
-        // Draw obstacles
         obstacles.forEach(obs => drawDino(obs));
-
-        // Draw Grady
         grady.draw();
-
         drawScore();
 
-        // Milestone flash
         if (score > 0 && score % 100 < 3) {
             ctx.fillStyle = `rgba(255, 255, 255, ${0.3 - (score % 100) * 0.1})`;
             ctx.fillRect(0, 0, 800, 300);
@@ -821,8 +830,6 @@
     }
 
     // ---- INPUT ----
-    const keys = {};
-
     function startGame() {
         gameState = 'playing';
         score = 0;
@@ -834,48 +841,108 @@
         grady.reset();
     }
 
-    document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' || e.code === 'ArrowUp') {
-            e.preventDefault();
+    function handleAction(action) {
+        if (action === 'jump') {
             if (gameState === 'start' || gameState === 'gameover') {
                 startGame();
             } else if (gameState === 'playing') {
                 grady.jump();
             }
-        }
-        if (e.code === 'ArrowDown') {
-            e.preventDefault();
+        } else if (action === 'duck_start') {
             if (gameState === 'playing') {
                 grady.duck(true);
             }
+        } else if (action === 'duck_end') {
+            grady.duck(false);
         }
-        keys[e.code] = true;
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.code === 'ArrowUp') {
+            e.preventDefault();
+            handleAction('jump');
+        }
+        if (e.code === 'ArrowDown') {
+            e.preventDefault();
+            handleAction('duck_start');
+        }
     });
 
     document.addEventListener('keyup', (e) => {
         if (e.code === 'ArrowDown') {
-            grady.duck(false);
+            handleAction('duck_end');
         }
-        keys[e.code] = false;
     });
 
-    // Touch support
-    canvas.addEventListener('touchstart', (e) => {
+    // ---- TOUCH CONTROLS (on-screen buttons) ----
+    // Jump button
+    btnJump.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleAction('jump');
+    }, { passive: false });
+
+    btnJump.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        handleAction('jump');
+    });
+
+    // Duck button - hold to duck
+    btnDuck.addEventListener('touchstart', (e) => {
         e.preventDefault();
         if (gameState === 'start' || gameState === 'gameover') {
             startGame();
-        } else if (gameState === 'playing') {
-            grady.jump();
+        } else {
+            handleAction('duck_start');
+        }
+    }, { passive: false });
+
+    btnDuck.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleAction('duck_end');
+    }, { passive: false });
+
+    btnDuck.addEventListener('touchcancel', (e) => {
+        handleAction('duck_end');
+    });
+
+    btnDuck.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        if (gameState === 'start' || gameState === 'gameover') {
+            startGame();
+        } else {
+            handleAction('duck_start');
         }
     });
 
-    canvas.addEventListener('click', () => {
-        if (gameState === 'start' || gameState === 'gameover') {
-            startGame();
-        } else if (gameState === 'playing') {
-            grady.jump();
-        }
+    btnDuck.addEventListener('mouseup', () => {
+        handleAction('duck_end');
     });
+
+    // Canvas tap for jump (fallback for simple tapping on the game)
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleAction('jump');
+    }, { passive: false });
+
+    canvas.addEventListener('click', () => {
+        handleAction('jump');
+    });
+
+    // Prevent iOS Safari bounce/zoom
+    document.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+    }, { passive: false });
+
+    // Prevent double-tap zoom on iOS
+    let lastTap = 0;
+    document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTap < 300) {
+            e.preventDefault();
+        }
+        lastTap = now;
+    }, { passive: false });
 
     // Polyfill for roundRect
     if (!ctx.roundRect) {
